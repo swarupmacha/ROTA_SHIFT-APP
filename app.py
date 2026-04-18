@@ -43,40 +43,25 @@ if uploaded_file:
         week_df = week_df.astype(str).reset_index(drop=True)
 
         # ==============================
-        # PREVIEW TABLE (Styled for UI only)
+        # PREVIEW IN APP
         # ==============================
-        def highlight_shift(val):
-            if val == "N":
-                return "background-color:#00BFFF; color:white;"
-            elif val == "1":
-                return "background-color:#FFA500; color:white;"
-            elif val == "2":
-                return "background-color:#FFD700; color:black;"
-            return ""
-
-        styled_df = (
-            week_df.style
-            .map(highlight_shift)
-            .hide(axis="index")
-        )
-
         st.subheader("Preview")
-        st.dataframe(week_df)  # simple preview (safe)
+        st.dataframe(week_df)
 
         # ==============================
-        # CLEAN HTML TABLE FOR EMAIL
+        # CONVERT TABLE TO CLEAN TEXT
         # ==============================
-        html_table = week_df.to_html(index=False)
+        table_text = week_df.to_string(index=False)
 
         # ==============================
-        # EMAIL BODY (NO STYLE TAGS)
+        # EMAIL BODY (FINAL)
         # ==============================
         email_body = f"""
 Hi All,
 
 Please find below your shifts for upcoming week.
 
-{html_table}
+{table_text}
 
 Thanks & Regards,
 Your Name
@@ -90,11 +75,11 @@ Your Name
         # 👉 Change domain if needed
         email_list = [name.strip() + "@gmail.com" for name in names]
 
-        # 🔥 Use ; instead of ,
+        # 🔥 Use ; separator for Outlook
         to_emails = ";".join(email_list)
 
         # ==============================
-        # OUTLOOK MAILTO LINK
+        # CREATE MAILTO LINK
         # ==============================
         subject = "24x7 Monitoring Shifts - Reminder"
 
@@ -109,7 +94,7 @@ Your Name
         )
 
         # ==============================
-        # BUTTON TO OPEN OUTLOOK
+        # OPEN OUTLOOK BUTTON
         # ==============================
         st.markdown(
             f'<a href="{mailto_link}">'
@@ -119,11 +104,11 @@ Your Name
         )
 
         # ==============================
-        # OPTIONAL DEBUG VIEW
+        # OPTIONAL: SHOW BODY
         # ==============================
-        show_html = st.checkbox("Show HTML")
+        show_body = st.checkbox("Show Email Body")
 
-        if show_html:
-            st.text_area("Email HTML", email_body, height=300)
+        if show_body:
+            st.text_area("Email Content", email_body, height=300)
 
         st.success("✅ Email Generated Successfully!")
