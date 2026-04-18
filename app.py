@@ -49,12 +49,30 @@ if uploaded_file:
         st.dataframe(week_df)
 
         # ==============================
-        # CONVERT TABLE TO CLEAN TEXT
+        # CLEAN ALIGNED TABLE TEXT
         # ==============================
-        table_text = week_df.to_string(index=False)
+        name_width = 25
+        col_width = 5
+
+        # Header
+        header = f"{'Name'.ljust(name_width)}"
+        for d in week_dates:
+            header += str(d).rjust(col_width)
+
+        lines = [header]
+
+        # Rows
+        for _, row in week_df.iterrows():
+            line = row["Name"].ljust(name_width)
+            for d in week_dates:
+                val = row[str(d)]
+                line += str(val).rjust(col_width)
+            lines.append(line)
+
+        table_text = "\n".join(lines)
 
         # ==============================
-        # EMAIL BODY (FINAL)
+        # EMAIL BODY
         # ==============================
         email_body = f"""
 Hi All,
@@ -75,7 +93,7 @@ Your Name
         # 👉 Change domain if needed
         email_list = [name.strip() + "@gmail.com" for name in names]
 
-        # 🔥 Use ; separator for Outlook
+        # Outlook uses ;
         to_emails = ";".join(email_list)
 
         # ==============================
@@ -94,7 +112,7 @@ Your Name
         )
 
         # ==============================
-        # OPEN OUTLOOK BUTTON
+        # OUTLOOK BUTTON
         # ==============================
         st.markdown(
             f'<a href="{mailto_link}">'
@@ -104,7 +122,7 @@ Your Name
         )
 
         # ==============================
-        # OPTIONAL: SHOW BODY
+        # OPTIONAL VIEW
         # ==============================
         show_body = st.checkbox("Show Email Body")
 
