@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
+import urllib.parse
 
 st.set_page_config(page_title="ROTA Generator", layout="wide")
 st.title("📊 ROTA Email Generator")
 
-# Upload file
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
 
 if uploaded_file:
@@ -19,10 +19,10 @@ if uploaded_file:
     with col2:
         end_day = st.number_input("End Day", 1, 31, 23)
 
-    if st.button("Generate Email"):
+    if st.button("Generate Draft Mail"):
 
         # ==============================
-        # READ + CLEAN DATA
+        # READ DATA
         # ==============================
         df = pd.read_excel(uploaded_file, sheet_name=sheet_name, header=1)
 
@@ -39,24 +39,17 @@ if uploaded_file:
         week_df = week_df.dropna(how='all', subset=cols[1:])
         week_df = week_df.fillna("")
         week_df.columns = ["Name"] + [str(d) for d in week_dates]
-        week_df = week_df.astype(str).reset_index(drop=True)
 
-        # ==============================
-        # PREVIEW
-        # ==============================
         st.subheader("Preview")
         st.dataframe(week_df)
 
         # ==============================
-        # CREATE TAB-FORMATTED TABLE
+        # CREATE TAB TABLE (BEST FOR BODY)
         # ==============================
         table_lines = []
-
-        # Header
         header = ["Name"] + [str(d) for d in week_dates]
         table_lines.append("\t".join(header))
 
-        # Rows
         for _, row in week_df.iterrows():
             row_data = [row["Name"]]
             for d in week_dates:
@@ -79,14 +72,37 @@ Your Name
 """
 
         # ==============================
-        # SHOW COPY AREA
+        # EMAIL IDS
         # ==============================
-        st.subheader("📋 Copy This and Paste into Outlook")
+        names = week_df["Name"].dropna().unique()
+        emails = [name.strip() + "@accenture.com" for name in names]
+        to_emails = ";".join(emails)
 
-        st.text_area(
-            "Select all → Copy → Paste into Outlook (auto converts to table)",
-            email_body,
-            height=300
+        # ==============================
+        # CREATE OUTLOOK WEB LINK
+        # ==============================
+        subject = "24x7 Monitoring Shifts - Reminder"
+
+        base_url = "https://outlook.office.com/mail/deeplink/compose"
+
+        params = {
+            "to": to_emails,
+            "subject": subject,
+            "body": email_body
+        }
+
+        query_string = urllib.parse.urlencode(params)
+
+        outlook_url = f"{base_url}?{query_string}"
+
+        # ==============================
+        # BUTTON TO OPEN DRAFT
+        # ==============================
+        st.markdown(
+            f'<a href="{outlook_url}" target="_blank">'
+            f'<button style="padding:10px 20px;font-size:16px;">📧 Open Draft in Outlook</button>'
+            f'</a>',
+            unsafe_allow_html=True
         )
 
-        st.success("✅ Copy and paste into Outlook — it will become a proper table!")
+        st.success("✅ Click button → Draft mail opens in Outlook Web!")
