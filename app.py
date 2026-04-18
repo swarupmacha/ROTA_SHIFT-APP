@@ -22,7 +22,7 @@ if uploaded_file:
     if st.button("Generate Draft Mail"):
 
         # ==============================
-        # READ DATA
+        # READ + CLEAN DATA
         # ==============================
         df = pd.read_excel(uploaded_file, sheet_name=sheet_name, header=1)
 
@@ -44,19 +44,35 @@ if uploaded_file:
         st.dataframe(week_df)
 
         # ==============================
-        # CREATE TAB TABLE (BEST FOR BODY)
+        # CREATE CLEAN PIPE TABLE
         # ==============================
-        table_lines = []
-        header = ["Name"] + [str(d) for d in week_dates]
-        table_lines.append("\t".join(header))
+        name_width = 25
+        col_width = 4
 
+        lines = []
+
+        # Header
+        header = "Name".ljust(name_width) + " |"
+        for d in week_dates:
+            header += f" {str(d).rjust(2)} |"
+        lines.append(header)
+
+        # Separator
+        lines.append("-" * len(header))
+
+        # Rows
         for _, row in week_df.iterrows():
-            row_data = [row["Name"]]
-            for d in week_dates:
-                row_data.append(row[str(d)])
-            table_lines.append("\t".join(row_data))
+            line = str(row["Name"]).ljust(name_width) + " |"
 
-        table_text = "\n".join(table_lines)
+            for d in week_dates:
+                val = row[str(d)]
+                if str(val) == "nan":
+                    val = ""
+                line += f" {str(val).rjust(2)} |"
+
+            lines.append(line)
+
+        table_text = "\n".join(lines)
 
         # ==============================
         # EMAIL BODY
@@ -92,11 +108,10 @@ Your Name
         }
 
         query_string = urllib.parse.urlencode(params)
-
         outlook_url = f"{base_url}?{query_string}"
 
         # ==============================
-        # BUTTON TO OPEN DRAFT
+        # OPEN DRAFT BUTTON
         # ==============================
         st.markdown(
             f'<a href="{outlook_url}" target="_blank">'
@@ -105,4 +120,10 @@ Your Name
             unsafe_allow_html=True
         )
 
-        st.success("✅ Click button → Draft mail opens in Outlook Web!")
+        # ==============================
+        # OPTIONAL VIEW
+        # ==============================
+        st.subheader("Email Preview (Copy if needed)")
+        st.text_area("", email_body, height=300)
+
+        st.success("✅ Click button → Draft mail opens with formatted table!")
