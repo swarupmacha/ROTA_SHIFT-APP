@@ -80,6 +80,14 @@ if uploaded_file:
         <br><br>
         Thanks & Regards
         """
+        # ==============================
+    # 🔥 ADD YOUR UI HERE
+    # ==============================
+        st.subheader("Preview")
+        st.components.v1.html(email_body, height=600)
+
+        if st.button("Show HTML"):
+        st.text_area("Email HTML", email_body, height=300)
 
         st.success("Email Generated!")
 
