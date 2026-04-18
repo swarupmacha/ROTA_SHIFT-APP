@@ -98,6 +98,31 @@ Hi All,
 
 Please find below your shifts for upcoming week.
 
+Note: You all will be doing complete 9 hours shifts 
+
+Please ensure to come in shifts on time and follow the escalation matrix as below in case of any issues:
+Respective Supervisors
+Segment wise ROTA POCs:
+Portfolio Leads
+
+Segment wise ROTA POCs are:
+Corporate Banking         --> Stubbs
+Retail Banking           --> Remhana Dekaot
+Tech & Data Capabilities --> KL Rahul
+Insurance                --> Raisk Salam
+
+Below are the MIM POCs for next week, in case of any MIM situation please reach out to them:
+- Rajesh Chawal (Banking)
+- Naleem Baking (Banking)
+- Shiavam Shendhe (Insurance)
+
+The shift timings are as follows:
+
+1st Shift   5:30 am to 2:30 pm (IST)
+2nd Shift   1:30 pm to 10:30 pm (IST)
+Night Shift 9:30 pm to 6:30 am (IST)
+
+
 {table_text}
 
 Thanks & Regards,
