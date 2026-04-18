@@ -5,6 +5,7 @@ import urllib.parse
 st.set_page_config(page_title="ROTA Generator", layout="wide")
 st.title("📊 ROTA Email Generator")
 
+# Upload file
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
 
 if uploaded_file:
@@ -19,7 +20,7 @@ if uploaded_file:
     with col2:
         end_day = st.number_input("End Day", 1, 31, 23)
 
-    if st.button("Generate Draft Mail"):
+    if st.button("Generate Email"):
 
         # ==============================
         # READ + CLEAN DATA
@@ -39,91 +40,106 @@ if uploaded_file:
         week_df = week_df.dropna(how='all', subset=cols[1:])
         week_df = week_df.fillna("")
         week_df.columns = ["Name"] + [str(d) for d in week_dates]
-
-        st.subheader("Preview")
-        st.dataframe(week_df)
+        week_df = week_df.astype(str).reset_index(drop=True)
 
         # ==============================
-        # CREATE CLEAN PIPE TABLE
+        # STYLE TABLE
         # ==============================
-        name_width = 25
-        col_width = 4
+        def highlight_shift(val):
+            if val == "N":
+                return "background-color:#00BFFF; color:white;"
+            elif val == "1":
+                return "background-color:#FFA500; color:white;"
+            elif val == "2":
+                return "background-color:#FFD700; color:black;"
+            return ""
 
-        lines = []
+        styled_df = (
+            week_df.style
+            .map(highlight_shift)
+            .hide(axis="index")
+            .set_properties(**{
+                'text-align': 'center',
+                'border': '1px solid black',
+                'color': 'white'
+            })
+            .set_table_styles([
+                {
+                    'selector': 'th',
+                    'props': [
+                        ('background-color', '#2E7D32'),
+                        ('color', 'white'),
+                        ('font-weight', 'bold'),
+                        ('border', '1px solid black'),
+                        ('text-align', 'center')
+                    ]
+                }
+            ])
+        )
 
-        # Header
-        header = "Name".ljust(name_width) + " |"
-        for d in week_dates:
-            header += f" {str(d).rjust(2)} |"
-        lines.append(header)
-
-        # Separator
-        lines.append("-" * len(header))
-
-        # Rows
-        for _, row in week_df.iterrows():
-            line = str(row["Name"]).ljust(name_width) + " |"
-
-            for d in week_dates:
-                val = row[str(d)]
-                if str(val) == "nan":
-                    val = ""
-                line += f" {str(val).rjust(2)} |"
-
-            lines.append(line)
-
-        table_text = "\n".join(lines)
+        html_table = styled_df.to_html()
 
         # ==============================
         # EMAIL BODY
         # ==============================
-        email_body = f"""Hi All,
+        email_body = f"""
+        Hi All,
 
-Please find below your shifts for upcoming week.
+        Please find below your shifts for upcoming week.
 
-{table_text}
+        {html_table}
 
-Thanks & Regards,
-Your Name
-"""
+        Thanks & Regards,
+        Your Name
+        """
 
         # ==============================
-        # EMAIL IDS
+        # 🔥 EXTRACT EMAILS
         # ==============================
         names = week_df["Name"].dropna().unique()
-        emails = [name.strip() + "@accenture.com" for name in names]
-        to_emails = ";".join(emails)
+
+        # 👉 change domain if needed
+        email_list = [name.strip() + "@gmail.com" for name in names]
+
+        to_emails = ",".join(email_list)
 
         # ==============================
-        # CREATE OUTLOOK WEB LINK
+        # PREVIEW
+        # ==============================
+        st.subheader("Preview")
+        st.components.v1.html(html_table, height=500, scrolling=True)
+
+        # ==============================
+        # OPTIONAL: SHOW HTML
+        # ==============================
+        show_html = st.checkbox("Show HTML")
+
+        if show_html:
+            st.text_area("Email HTML", email_body, height=300)
+
+        # ==============================
+        # 📧 OUTLOOK BUTTON
         # ==============================
         subject = "24x7 Monitoring Shifts - Reminder"
 
-        base_url = "https://outlook.office.com/mail/deeplink/compose"
+        encoded_subject = urllib.parse.quote(subject)
+        encoded_body = urllib.parse.quote(email_body)
+        encoded_to = urllib.parse.quote(to_emails)
 
-        params = {
-            "to": to_emails,
-            "subject": subject,
-            "body": email_body
-        }
+        mailto_link = (
+            f"mailto:{encoded_to}"
+            f"?subject={encoded_subject}"
+            f"&body={encoded_body}"
+        )
 
-        query_string = urllib.parse.urlencode(params)
-        outlook_url = f"{base_url}?{query_string}"
-
-        # ==============================
-        # OPEN DRAFT BUTTON
-        # ==============================
         st.markdown(
-            f'<a href="{outlook_url}" target="_blank">'
-            f'<button style="padding:10px 20px;font-size:16px;">📧 Open Draft in Outlook</button>'
+            f'<a href="{mailto_link}">'
+            f'<button style="padding:10px 20px;font-size:16px;">📧 Open Outlook</button>'
             f'</a>',
             unsafe_allow_html=True
         )
 
         # ==============================
-        # OPTIONAL VIEW
+        # SUCCESS MESSAGE
         # ==============================
-        st.subheader("Email Preview (Copy if needed)")
-        st.text_area("", email_body, height=300)
-
-        st.success("✅ Click button → Draft mail opens with formatted table!")
+        st.success("Email Generated & Ready to Send!")
