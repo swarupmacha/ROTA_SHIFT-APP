@@ -5,7 +5,34 @@ import urllib.parse
 st.set_page_config(page_title="ROTA Generator", layout="wide")
 st.title("📊 ROTA Email Generator")
 
-# Upload file
+# ==============================
+# DATE SUFFIX FUNCTION
+# ==============================
+def get_day_suffix(day):
+    if 11 <= day <= 13:
+        return f"{day}th"
+    last = day % 10
+    if last == 1:
+        return f"{day}st"
+    elif last == 2:
+        return f"{day}nd"
+    elif last == 3:
+        return f"{day}rd"
+    else:
+        return f"{day}th"
+
+# ==============================
+# MONTH MAP
+# ==============================
+month_map = {
+    "Jan": "Jan", "Feb": "Feb", "Mar": "Mar", "Apr": "Apr",
+    "May": "May", "Jun": "Jun", "Jul": "Jul", "Aug": "Aug",
+    "Sep": "Sep", "Oct": "Oct", "Nov": "Nov", "Dec": "Dec"
+}
+
+# ==============================
+# FILE UPLOAD
+# ==============================
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
 
 if uploaded_file:
@@ -16,9 +43,9 @@ if uploaded_file:
     col1, col2 = st.columns(2)
 
     with col1:
-        start_day = st.number_input("Start Day", 1, 31, 19)
+        start_day = st.number_input("Start Day", 1, 31, 13)
     with col2:
-        end_day = st.number_input("End Day", 1, 31, 23)
+        end_day = st.number_input("End Day", 1, 31, 19)
 
     if st.button("Generate Email"):
 
@@ -43,18 +70,28 @@ if uploaded_file:
         week_df = week_df.astype(str).reset_index(drop=True)
 
         # ==============================
-        # PREVIEW IN APP
+        # PREVIEW
         # ==============================
         st.subheader("Preview")
         st.dataframe(week_df)
 
         # ==============================
-        # CONVERT TABLE TO CLEAN TEXT
+        # TABLE TEXT
         # ==============================
         table_text = week_df.to_string(index=False)
 
         # ==============================
-        # EMAIL BODY (FINAL)
+        # DYNAMIC SUBJECT
+        # ==============================
+        start_str = get_day_suffix(start_day)
+        end_str = get_day_suffix(end_day)
+
+        month = month_map.get(sheet_name[:3], sheet_name[:3])
+
+        subject = f"24x7 Monitoring Shifts - {start_str} {month} to {end_str} {month} 2026"
+
+        # ==============================
+        # EMAIL BODY
         # ==============================
         email_body = f"""
 Hi All,
@@ -68,21 +105,15 @@ Your Name
 """
 
         # ==============================
-        # EXTRACT EMAILS
+        # EMAIL IDS
         # ==============================
         names = week_df["Name"].dropna().unique()
-
-        # 👉 Change domain if needed
-        email_list = [name.strip() + "@gmail.com" for name in names]
-
-        # 🔥 Use ; separator for Outlook
+        email_list = [name.strip() + "@accenture.com" for name in names]
         to_emails = ";".join(email_list)
 
         # ==============================
-        # CREATE MAILTO LINK
+        # MAILTO LINK
         # ==============================
-        subject = "24x7 Monitoring Shifts - Reminder"
-
         encoded_subject = urllib.parse.quote(subject)
         encoded_body = urllib.parse.quote(email_body)
         encoded_to = urllib.parse.quote(to_emails)
@@ -94,7 +125,7 @@ Your Name
         )
 
         # ==============================
-        # OPEN OUTLOOK BUTTON
+        # BUTTON
         # ==============================
         st.markdown(
             f'<a href="{mailto_link}">'
@@ -104,7 +135,7 @@ Your Name
         )
 
         # ==============================
-        # OPTIONAL: SHOW BODY
+        # OPTIONAL VIEW
         # ==============================
         show_body = st.checkbox("Show Email Body")
 
