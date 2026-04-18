@@ -49,10 +49,27 @@ if uploaded_file:
             return ""
 
         styled_df = (
-            week_df.style
-            .map(highlight_shift)
-            .hide(axis="index")
-        )
+    week_df.style
+    .map(highlight_shift)
+    .hide(axis="index")
+    .set_properties(**{
+        'text-align': 'center',
+        'border': '1px solid black',
+        'color': 'white'   # 🔥 THIS MAKES TEXT WHITE
+    })
+    .set_table_styles([
+        {
+            'selector': 'th',
+            'props': [
+                ('background-color', '#2E7D32'),
+                ('color', 'white'),   # header text white
+                ('font-weight', 'bold'),
+                ('border', '1px solid black'),
+                ('text-align', 'center')
+            ]
+        }
+    ])
+)
 
         html_table = styled_df.to_html()
 
