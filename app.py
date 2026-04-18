@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
-import win32com.client as win32
+import urllib.parse
 
 st.set_page_config(page_title="ROTA Generator", layout="wide")
-st.title("📊 ROTA Email Generator (Outlook Automation)")
+st.title("📊 ROTA Email Generator")
 
 # Upload file
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
@@ -20,7 +20,7 @@ if uploaded_file:
     with col2:
         end_day = st.number_input("End Day", 1, 31, 23)
 
-    if st.button("Generate & Open Outlook"):
+    if st.button("Generate Email"):
 
         # ==============================
         # READ + CLEAN DATA
@@ -43,92 +43,72 @@ if uploaded_file:
         week_df = week_df.astype(str).reset_index(drop=True)
 
         # ==============================
-        # PREVIEW
+        # PREVIEW IN APP
         # ==============================
         st.subheader("Preview")
         st.dataframe(week_df)
 
         # ==============================
-        # CREATE CLEAN HTML TABLE
+        # CONVERT TABLE TO CLEAN TEXT
         # ==============================
-        html_table = "<table border='1' cellpadding='5' cellspacing='0' style='border-collapse: collapse;'>"
-
-        # Header
-        html_table += "<tr style='background-color:#2E7D32; color:white;'>"
-        html_table += "<th>Name</th>"
-        for d in week_dates:
-            html_table += f"<th>{d}</th>"
-        html_table += "</tr>"
-
-        # Rows
-        for _, row in week_df.iterrows():
-            html_table += "<tr>"
-            html_table += f"<td>{row['Name']}</td>"
-
-            for d in week_dates:
-                val = row[str(d)]
-
-                if val == "N":
-                    color = "#00BFFF"
-                elif val == "1":
-                    color = "#FFA500"
-                elif val == "2":
-                    color = "#FFD700"
-                else:
-                    color = ""
-
-                if color:
-                    html_table += f"<td style='background-color:{color}; text-align:center;'>{val}</td>"
-                else:
-                    html_table += f"<td style='text-align:center;'>{val}</td>"
-
-            html_table += "</tr>"
-
-        html_table += "</table>"
+        table_text = week_df.to_string(index=False)
 
         # ==============================
-        # EMAIL BODY
+        # EMAIL BODY (FINAL)
         # ==============================
         email_body = f"""
-        <html>
-        <body>
+Hi All,
 
-        <p>Hi All,</p>
+Please find below your shifts for upcoming week.
 
-        <p>Please find below your shifts for upcoming week.</p>
+{table_text}
 
-        {html_table}
-
-        <p>Thanks & Regards,<br>
-        Your Name</p>
-
-        </body>
-        </html>
-        """
+Thanks & Regards,
+Your Name
+"""
 
         # ==============================
         # EXTRACT EMAILS
         # ==============================
         names = week_df["Name"].dropna().unique()
 
-        # 👉 change domain if needed
-        email_list = [name.strip() + "@accenture.com" for name in names]
+        # 👉 Change domain if needed
+        email_list = [name.strip() + "@gmail.com" for name in names]
+
+        # 🔥 Use ; separator for Outlook
         to_emails = ";".join(email_list)
 
         # ==============================
-        # OPEN OUTLOOK
+        # CREATE MAILTO LINK
         # ==============================
-        try:
-            outlook = win32.Dispatch('outlook.application')
-            mail = outlook.CreateItem(0)
+        subject = "24x7 Monitoring Shifts - Reminder"
 
-            mail.To = to_emails
-            mail.Subject = "24x7 Monitoring Shifts - Reminder"
-            mail.HTMLBody = email_body
+        encoded_subject = urllib.parse.quote(subject)
+        encoded_body = urllib.parse.quote(email_body)
+        encoded_to = urllib.parse.quote(to_emails)
 
-            mail.Display()
+        mailto_link = (
+            f"mailto:{encoded_to}"
+            f"?subject={encoded_subject}"
+            f"&body={encoded_body}"
+        )
 
-            st.success("✅ Outlook opened with formatted table!")
+        # ==============================
+        # OPEN OUTLOOK BUTTON
+        # ==============================
+        st.markdown(
+            f'<a href="{mailto_link}">'
+            f'<button style="padding:10px 20px;font-size:16px;">📧 Open Outlook</button>'
+            f'</a>',
+            unsafe_allow_html=True
+        )
 
-        except Exception as e:
-            st.error(f"Error opening Outlook: {e}")
+        # ==============================
+        # OPTIONAL: SHOW BODY
+        # ==============================
+        show_body = st.checkbox("Show Email Body")
+
+        if show_body:
+            st.text_area("Email Content", email_body, height=300)
+
+        st.success("✅ Email Generated Successfully!")
