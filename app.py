@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import urllib.parse
 
 st.set_page_config(page_title="ROTA Generator", layout="wide")
 st.title("📊 ROTA Email Generator")
@@ -49,86 +48,44 @@ if uploaded_file:
         st.dataframe(week_df)
 
         # ==============================
-        # CLEAN ALIGNED TABLE TEXT
+        # CREATE CLEAN HTML TABLE
         # ==============================
-        name_width = 25
-        col_width = 5
-
-        # Header
-        header = f"{'Name'.ljust(name_width)}"
-        for d in week_dates:
-            header += str(d).rjust(col_width)
-
-        lines = [header]
-
-        # Rows
-        for _, row in week_df.iterrows():
-            line = row["Name"].ljust(name_width)
-            for d in week_dates:
-                val = row[str(d)]
-                line += str(val).rjust(col_width)
-            lines.append(line)
-
-        table_text = "\n".join(lines)
+        html_table = week_df.to_html(index=False, border=1)
 
         # ==============================
-        # EMAIL BODY
+        # EMAIL HTML BODY
         # ==============================
         email_body = f"""
-Hi All,
+        <html>
+        <body>
 
-Please find below your shifts for upcoming week.
+        <p>Hi All,</p>
 
-<pre style="font-family:Courier New; font-size:14px;">
-{table_text}
-</pre>
+        <p>Please find below your shifts for upcoming week.</p>
 
-Thanks & Regards,
-Your Name
-"""
+        {html_table}
 
-        # ==============================
-        # EXTRACT EMAILS
-        # ==============================
-        names = week_df["Name"].dropna().unique()
+        <p>Thanks & Regards,<br>
+        Your Name</p>
 
-        # 👉 Change domain if needed
-        email_list = [name.strip() + "@gmail.com" for name in names]
-
-        # Outlook uses ;
-        to_emails = ";".join(email_list)
+        </body>
+        </html>
+        """
 
         # ==============================
-        # CREATE MAILTO LINK
+        # DOWNLOAD BUTTON (BEST SOLUTION)
         # ==============================
-        subject = "24x7 Monitoring Shifts - Reminder"
-
-        encoded_subject = urllib.parse.quote(subject)
-        encoded_body = urllib.parse.quote(email_body)
-        encoded_to = urllib.parse.quote(to_emails)
-
-        mailto_link = (
-            f"mailto:{encoded_to}"
-            f"?subject={encoded_subject}"
-            f"&body={encoded_body}"
+        st.download_button(
+            "⬇️ Download Email (HTML)",
+            data=email_body,
+            file_name="rota_email.html",
+            mime="text/html"
         )
 
         # ==============================
-        # OUTLOOK BUTTON
+        # OPTIONAL PREVIEW (HTML)
         # ==============================
-        st.markdown(
-            f'<a href="{mailto_link}">'
-            f'<button style="padding:10px 20px;font-size:16px;">📧 Open Outlook</button>'
-            f'</a>',
-            unsafe_allow_html=True
-        )
+        st.subheader("Email Preview (Table Format)")
+        st.components.v1.html(email_body, height=500, scrolling=True)
 
-        # ==============================
-        # OPTIONAL VIEW
-        # ==============================
-        show_body = st.checkbox("Show Email Body")
-
-        if show_body:
-            st.text_area("Email Content", email_body, height=300)
-
-        st.success("✅ Email Generated Successfully!")
+        st.success("✅ Email Ready! Download and paste into Outlook.")
