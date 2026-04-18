@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import urllib.parse
 
 st.set_page_config(page_title="ROTA Generator", layout="wide")
 st.title("📊 ROTA Email Generator")
@@ -43,21 +42,33 @@ if uploaded_file:
         week_df = week_df.astype(str).reset_index(drop=True)
 
         # ==============================
-        # PREVIEW IN APP
+        # PREVIEW
         # ==============================
         st.subheader("Preview")
         st.dataframe(week_df)
 
         # ==============================
-        # CONVERT TABLE TO CLEAN TEXT
+        # CREATE TAB-FORMATTED TABLE
         # ==============================
-        table_text = week_df.to_string(index=False)
+        table_lines = []
+
+        # Header
+        header = ["Name"] + [str(d) for d in week_dates]
+        table_lines.append("\t".join(header))
+
+        # Rows
+        for _, row in week_df.iterrows():
+            row_data = [row["Name"]]
+            for d in week_dates:
+                row_data.append(row[str(d)])
+            table_lines.append("\t".join(row_data))
+
+        table_text = "\n".join(table_lines)
 
         # ==============================
-        # EMAIL BODY (FINAL)
+        # EMAIL BODY
         # ==============================
-        email_body = f"""
-Hi All,
+        email_body = f"""Hi All,
 
 Please find below your shifts for upcoming week.
 
@@ -68,47 +79,14 @@ Your Name
 """
 
         # ==============================
-        # EXTRACT EMAILS
+        # SHOW COPY AREA
         # ==============================
-        names = week_df["Name"].dropna().unique()
+        st.subheader("📋 Copy This and Paste into Outlook")
 
-        # 👉 Change domain if needed
-        email_list = [name.strip() + "@gmail.com" for name in names]
-
-        # 🔥 Use ; separator for Outlook
-        to_emails = ";".join(email_list)
-
-        # ==============================
-        # CREATE MAILTO LINK
-        # ==============================
-        subject = "24x7 Monitoring Shifts - Reminder"
-
-        encoded_subject = urllib.parse.quote(subject)
-        encoded_body = urllib.parse.quote(email_body)
-        encoded_to = urllib.parse.quote(to_emails)
-
-        mailto_link = (
-            f"mailto:{encoded_to}"
-            f"?subject={encoded_subject}"
-            f"&body={encoded_body}"
+        st.text_area(
+            "Select all → Copy → Paste into Outlook (auto converts to table)",
+            email_body,
+            height=300
         )
 
-        # ==============================
-        # OPEN OUTLOOK BUTTON
-        # ==============================
-        st.markdown(
-            f'<a href="{mailto_link}">'
-            f'<button style="padding:10px 20px;font-size:16px;">📧 Open Outlook</button>'
-            f'</a>',
-            unsafe_allow_html=True
-        )
-
-        # ==============================
-        # OPTIONAL: SHOW BODY
-        # ==============================
-        show_body = st.checkbox("Show Email Body")
-
-        if show_body:
-            st.text_area("Email Content", email_body, height=300)
-
-        st.success("✅ Email Generated Successfully!")
+        st.success("✅ Copy and paste into Outlook — it will become a proper table!")
