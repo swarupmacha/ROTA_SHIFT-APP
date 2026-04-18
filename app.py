@@ -79,7 +79,9 @@ Hi All,
 
 Please find below your shifts for upcoming week.
 
+<pre style="font-family:Courier New; font-size:14px;">
 {table_text}
+</pre>
 
 Thanks & Regards,
 Your Name
