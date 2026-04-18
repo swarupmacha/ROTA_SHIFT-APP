@@ -43,82 +43,43 @@ if uploaded_file:
         week_df = week_df.astype(str).reset_index(drop=True)
 
         # ==============================
-        # STYLE TABLE
+        # PREVIEW IN APP
         # ==============================
-        def highlight_shift(val):
-            if val == "N":
-                return "background-color:#00BFFF; color:white;"
-            elif val == "1":
-                return "background-color:#FFA500; color:white;"
-            elif val == "2":
-                return "background-color:#FFD700; color:black;"
-            return ""
-
-        styled_df = (
-            week_df.style
-            .map(highlight_shift)
-            .hide(axis="index")
-            .set_properties(**{
-                'text-align': 'center',
-                'border': '1px solid black',
-                'color': 'white'
-            })
-            .set_table_styles([
-                {
-                    'selector': 'th',
-                    'props': [
-                        ('background-color', '#2E7D32'),
-                        ('color', 'white'),
-                        ('font-weight', 'bold'),
-                        ('border', '1px solid black'),
-                        ('text-align', 'center')
-                    ]
-                }
-            ])
-        )
-
-        html_table = styled_df.to_html()
+        st.subheader("Preview")
+        st.dataframe(week_df)
 
         # ==============================
-        # EMAIL BODY
+        # CONVERT TABLE TO CLEAN TEXT
+        # ==============================
+        table_text = week_df.to_string(index=False)
+
+        # ==============================
+        # EMAIL BODY (FINAL)
         # ==============================
         email_body = f"""
-        Hi All,
+Hi All,
 
-        Please find below your shifts for upcoming week.
+Please find below your shifts for upcoming week.
 
-        {html_table}
+{table_text}
 
-        Thanks & Regards,
-        Your Name
-        """
+Thanks & Regards,
+Your Name
+"""
 
         # ==============================
-        # 🔥 EXTRACT EMAILS
+        # EXTRACT EMAILS
         # ==============================
         names = week_df["Name"].dropna().unique()
 
-        # 👉 change domain if needed
+        # 👉 Change domain if needed
         email_list = [name.strip() + "@gmail.com" for name in names]
 
-        to_emails = ",".join(email_list)
+        # 🔥 Use ; separator for Outlook
+        to_emails = ";".join(email_list)
 
         # ==============================
-        # PREVIEW
-        # ==============================
-        st.subheader("Preview")
-        st.components.v1.html(html_table, height=500, scrolling=True)
-
-        # ==============================
-        # OPTIONAL: SHOW HTML
-        # ==============================
-        show_html = st.checkbox("Show HTML")
-
-        if show_html:
-            st.text_area("Email HTML", email_body, height=300)
-
-        # ==============================
-        # 📧 OUTLOOK BUTTON
+        # CREATE MAILTO LINK
         # ==============================
         subject = "24x7 Monitoring Shifts - Reminder"
 
@@ -132,6 +93,9 @@ if uploaded_file:
             f"&body={encoded_body}"
         )
 
+        # ==============================
+        # OPEN OUTLOOK BUTTON
+        # ==============================
         st.markdown(
             f'<a href="{mailto_link}">'
             f'<button style="padding:10px 20px;font-size:16px;">📧 Open Outlook</button>'
@@ -140,6 +104,11 @@ if uploaded_file:
         )
 
         # ==============================
-        # SUCCESS MESSAGE
+        # OPTIONAL: SHOW BODY
         # ==============================
-        st.success("Email Generated & Ready to Send!")
+        show_body = st.checkbox("Show Email Body")
+
+        if show_body:
+            st.text_area("Email Content", email_body, height=300)
+
+        st.success("✅ Email Generated Successfully!")
